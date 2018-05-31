@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  devnet:
+    build:
+      context: ..
+      dockerfile: vm/Dockerfile.ganache
+    entrypoint: ganache-cli
+    command: -b 10
+  api:
+    build:
+      context: ..
+      dockerfile: vm/Dockerfile.api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../src/:/src/
+      - /src/node_modules
+    tty: true
+    depends_on:     
+      - "devnet"
+    environment:
+      - HOST=0.0.0.0
+      - RPCHOST=testrpc
+      - RPCPORT=8545
+

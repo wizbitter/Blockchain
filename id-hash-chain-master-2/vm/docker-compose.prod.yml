@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  enode:
+    image: ethereum/client-go:alltools-stable
+    entrypoint: bootnode
+    volumes:
+      - ../chain/:/chain/
+    ports:
+      - 30310:30310
+    command: -nodekey chain/boot.key -verbosity 9 -addr :30310
+  node1:
+    image: ethereum/client-go
+    volumes:
+      - ../chain/:/chain/
+    env_file:
+      - ../chain/node1/dotenv
+    ports:
+      - 30311:30311
+      - 8501:8501
+    depends_on:
+      - "enode"
+    entrypoint: /chain/launch-node.sh /chain/node1 30311 8501 enode
+  node2:
+    image: ethereum/client-go
+    volumes:
+      - ../chain/:/chain/
+    env_file:
+      - ../chain/node2/dotenv
+    ports:
+      - 30312:30312
+      - 8502:8502
+    depends_on:
+      - "enode"
+    entrypoint: /chain/launch-node.sh /chain/node2 30312 8502 localhost
+    

@@ -1,0 +1,30 @@
+{
+  "name": "id-hash",
+  "version": "1.0.0",
+  "description": "ID Hash contracts and API",
+  "scripts": {
+    "lint": "eslint ./",
+    "build-api": "babel /src/app -s -D -d /src/dist --presets es2015,stage-0",
+    "start-api": "node /src/dist/routes.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "babel-register": "^6.26.0",
+    "bcrypt": "^1.0.3",
+    "canonical-json": "0.0.4",
+    "crypto-js": "^3.1.9-1",
+    "dotenv": "^5.0.1",
+    "express": "^4.16.2",
+    "js-sha3": "^0.7.0",
+    "jsonwebtoken": "^8.2.0",
+    "request": "^2.83.0",
+    "truffle-contract": "^3.0.4",
+    "web3": "^1.0.0-beta.30",
+    "zeppelin-solidity": "1.7.0"
+  }
+}

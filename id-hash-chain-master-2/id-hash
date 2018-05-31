@@ -1,0 +1,140 @@
+#!/bin/bash
+
+# [From https://github.com/RenatGilmanov/shell-script-template]
+# ------------------------------------------------------------------
+# [Author] James Cunningham
+#          governance project environment commands
+# ------------------------------------------------------------------
+
+# Work in the parent directory
+# cd "$(dirname "$0")/.."
+
+SUBJECT=id-chain
+VERSION=0.1.0
+USAGE="Usage: id-chain -hv args"
+
+# --- Option processing --------------------------------------------
+while getopts ":vh" optname
+do
+    case "$optname" in
+        "v")
+            echo "Version $VERSION"
+            exit 0;
+            ;;
+        "h")
+            echo $USAGE
+            exit 0;
+            ;;
+        "?")
+            echo "Unknown option $OPTARG"
+            exit 0;
+            ;;
+        ":")
+            echo "No argument value for option $OPTARG"
+            exit 0;
+            ;;
+        *)
+            echo "Unknown error while processing options"
+            exit 0;
+            ;;
+    esac
+done
+
+shift $(($OPTIND - 1))
+
+cmd=$1
+param=$2
+command="command_$1"
+
+# -----------------------------------------------------------------
+LOCK_FILE=/tmp/${SUBJECT}.lock
+
+if [ -f "$LOCK_FILE" ]; then
+    echo "Script is already running"
+    exit
+fi
+
+# -----------------------------------------------------------------
+trap "rm -f $LOCK_FILE" EXIT
+touch $LOCK_FILE 
+
+# -----------------------------------------------------------------
+
+# define some colors to use for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+source ./bin/functions.sh
+source ./bin/bootstrap.sh
+
+function command_hack {
+    printf "${GREEN}Ok, let's see what we can see...${NC}\n"
+    
+    # catch unexpected failures, do cleanup and output an error message
+    trap 'cleanup-dev ; printf "${RED}docker-compose Failed For Unexpected Reasons${NC}\n"'\
+         HUP INT QUIT PIPE TERM
+
+    hack
+    
+    if [ $? -ne 0 ] ; then
+        printf "${RED}Docker Compose Failed${NC}\n"
+        exit -1
+    fi
+
+    printf "${GREEN}...everybody online and looking good.${NC}\n"
+
+}
+
+function command_down {
+    printf "${GREEN}Killing docker instances${NC}\n"
+    cleanup-dev;
+    printf "${GREEN}Dev down${NC}\n"
+}
+
+
+function command_build {
+    printf "${GREEN}Rebuilding docker instances${NC}\n"
+    build;
+    printf "${GREEN}Done${NC}\n"
+}
+
+function command_prod {
+    printf "${GREEN}Deploying prod environment${NC}\n"
+    prod;
+    printf "${GREEN}Done${NC}\n"
+}
+
+function command_init {
+    if [ -d "./chain" ]; then
+        printf "${RED}chain directory already exists, aborting...${NC}\n"
+        return;
+    fi
+    printf "${GREEN}Initializing private chain${NC}\n"
+    mkdir chain;
+    mkdir chain/node1;
+    mkdir chain/node2;
+    cp conf/genesis.json chain/;
+    genPassword chain/node1/password;
+    genPassword chain/node2/password;
+    initAccount chain node1;
+    initAccount chain node2;
+    populateGenesis chain 1 `sed '1q;d' chain/accounts`;
+    populateGenesis chain 2 `sed '2q;d' chain/accounts`;
+    genBootKey chain;
+    writeENodeAddress chain;
+    cp conf/launch-node.template.sh chain/launch-node.sh;
+    chmod +x chain/launch-node.sh
+    makeEnv chain/node1 `sed '1q;d' chain/accounts`;
+    makeEnv chain/node2 `sed '2q;d' chain/accounts`;
+}
+
+# -----------------------------------------------------------------
+# -----------------------------------------------------------------
+if [ -n "$(type -t ${command})" ] && [ "$(type -t ${command})" = function ]; then 
+    ${command}
+else 
+    echo "'${cmd}' is NOT a command"; 
+fi
+
+ 

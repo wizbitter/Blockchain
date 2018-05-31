@@ -1,0 +1,15 @@
+FROM node:9.7.1-alpine
+RUN apk add --update git python g++ make && \
+  rm -rf /tmp/* /var/cache/apk/*
+
+ENV TMPDIR /tmp/
+WORKDIR /src/
+
+COPY ./src/package.json /src/
+
+RUN npm install -g truffle     
+RUN npm install
+
+ENTRYPOINT [""]
+
+CMD truffle compile && truffle migrate && npm run build-api && npm run start-api
